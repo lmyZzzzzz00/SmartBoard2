@@ -160,6 +160,9 @@ void Board::animate()
         m_posY = m_zoomCy - (m_zoomCy - m_zoomStartPosY) * m_scale / m_zoomStartScale;
     }
 
+    // 缩放提示
+    std::cout << "Scaled: " << m_scale << std::endl;
+
     emit scaleChangedSignal(m_scale);
 
     update();
