@@ -295,6 +295,7 @@ void GestureBrush::mousePressEvent(QMouseEvent* event)
     s.color = m_penColor;
     s.type  = m_type;
     s.freezeScale = m_s0;          // ★ 新增：记录落笔时的缩放比
+    m_pressPos = raw;
 
     m_strokes.append(std::move(s));
     m_curIndex = static_cast<int>(m_strokes.size()) - 1;
@@ -350,8 +351,23 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
     requestRepaint();
 }
 
-void GestureBrush::mouseReleaseEvent(QMouseEvent* event) {
-    if (m_isDragging) { // 只有拖拽了才处理
+void GestureBrush::mouseReleaseEvent(QMouseEvent* event)
+{
+    if (m_isDragging) {
+        // ★ 判断是否为原地点击
+        const QPointF releasePos = event->position();
+        const bool isClick = (distance(m_pressPos, releasePos) < m_clickThreshold);
+        
+        if (isClick && m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
+            // 原地点击 → 画圆
+            Stroke& cur = m_strokes[m_curIndex];
+            const double sw = curScreenWidth();
+            const QPointF centerImg = toImgCoord(m_pressPos);
+            
+            // 以当前笔刷宽度的一半作为圆半径，画出一个饱满的圆
+            makeCircleStroke(cur, centerImg, sw / 2.0);
+        }
+        
         m_smoothedPos.reset();
         m_curIndex = -1;
         m_isDragging = false;
@@ -406,4 +422,26 @@ void GestureBrush::OnChangeBtnModeEvent(const BtnType type) {
 
 void GestureBrush::OnChangeScaleEvent(const double scale) {
     m_scale = scale;
+}
+
+void GestureBrush::makeCircleStroke(Stroke& stroke, const QPointF& centerImg, double radiusScreen)
+{
+    // 使用固定数量的线段逼近圆形，36个点足够平滑
+    constexpr int segments = 36;
+    const double worldRadius = radiusScreen / stroke.freezeScale;
+    
+    stroke.pts.clear();
+    stroke.sw.clear();
+    stroke.ww.clear();
+    
+    for (int i = 0; i <= segments; ++i) {
+        const double angle = 2.0 * M_PI * i / segments;
+        // 在世界坐标系下生成圆上的点
+        const QPointF pt(centerImg.x() + worldRadius * std::cos(angle),
+                         centerImg.y() + worldRadius * std::sin(angle));
+        
+        stroke.pts.append(pt);
+        stroke.sw.append(radiusScreen * 2.0);  // 线宽 = 直径（视觉上较粗的圆环）
+        stroke.ww.append(worldRadius * 2.0);
+    }
 }

@@ -107,6 +107,12 @@ private:
     QPixmap m_eraserPixmap;
     QLabel *m_eraserLabel = nullptr;
 
+    QPointF m_pressPos;           // ★ 新增：记录鼠标按下时的屏幕坐标
+    double m_clickThreshold = 5.0; // ★ 新增：点击判定阈值（像素），小于此值视为原地点击
+    
+    // ★ 新增：将当前笔画替换为圆形
+    void makeCircleStroke(Stroke& stroke, const QPointF& centerImg, double radiusScreen);
+
 public slots:
     void OnChangeBtnModeEvent(BtnType type);
     void OnChangeScaleEvent(double scale);
