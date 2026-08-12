@@ -63,6 +63,17 @@ Board::Board(const QString& imgPath, const int width, const int height, QWidget*
     m_gestureBrush->move(0, 0);
     m_gestureBrush->resize(this->width(), this->height());
 
+    // 缩放提示标签
+    m_scale_info_label = new QLabel(this);
+    m_scale_info_label->setAlignment(Qt::AlignCenter);
+    m_scale_info_label->setStyleSheet("background-color: rgba(0, 0, 0, 160);color: rgb(255, 255, 255);border-radius: 10px;");
+    m_scale_info_label->setFont(QFont("Microsoft YaHei", 12));
+    m_scale_info_label->setText("缩放：100%");
+    m_scale_info_label->setMargin(8);
+    m_scale_info_label->move(this->width() / 2 - m_scale_info_label->width() / 2, this->height() / 2 - m_scale_info_label->height() / 2);
+    m_scale_info_label->hide();
+
+
     // ─── 动画定时器 ───
     m_timer = new QTimer(this);
     m_timer->setInterval(16);   // ≈60 fps
@@ -102,6 +113,7 @@ void Board::resizeEvent(QResizeEvent* event)
     }
 
     m_gestureBrush->resize(width(), height());
+    m_scale_info_label->move(this->width() / 2 - m_scale_info_label->width() / 2, this->height() / 2 - m_scale_info_label->height() / 2);
 
     // 发射信号
     emit resized(width(), height());
@@ -161,7 +173,10 @@ void Board::animate()
     }
 
     // 缩放提示
-    std::cout << "Scaled: " << m_scale << std::endl;
+    // std::cout << "Scaled: " << m_scale << std::endl;
+    m_scale_info_label->setText(QString("缩放：") + QString::number(m_scale * 100, 'f', 0) + QString("%"));
+    m_scale_info_label->show();
+    QTimer::singleShot(3000, m_scale_info_label, &QLabel::hide);
 
     emit scaleChangedSignal(m_scale);
 

@@ -4,6 +4,7 @@
 #include <QColor>
 #include <QPoint>
 #include <QTimer>
+#include <QLabel>
 #include <QGestureEvent>
 
 #include "BtnTypes.h"
@@ -95,6 +96,9 @@ private:
     double m_rotate_target_angle = 90.0; // 目标旋转角度
     double m_rotate_step = 0.3;
     double m_rotation = 0.0; // 记录当前旋转角度（0, 90, 180, 270）
+
+    // 缩放提示QLabel
+    QLabel* m_scale_info_label = nullptr;
 
 signals:
     void resized(int w, int h);
