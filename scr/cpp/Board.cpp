@@ -15,7 +15,6 @@
 #include <iostream>
 #include <QApplication>
 #include "../h/BtnTypes.h"
-#include "../h/SingleToolBtn.h"
 
 // ═══════════════════════════════════════════════════════════
 Board::Board(const QString& imgPath, const int width, const int height, QWidget* parent)
@@ -407,6 +406,6 @@ void Board::rotate_animate() {
     update();
 }
 
-void Board::HideScaleInfoLabel() {
+void Board::HideScaleInfoLabel() const {
     m_scale_info_label->hide();
 }

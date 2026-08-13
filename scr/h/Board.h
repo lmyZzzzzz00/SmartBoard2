@@ -100,7 +100,7 @@ private:
     // 缩放提示QLabel
     QLabel* m_scale_info_label = nullptr;
     QTimer* m_scale_info_timer;
-    void HideScaleInfoLabel();
+    void HideScaleInfoLabel() const;
 
 signals:
     void resized(int w, int h);
