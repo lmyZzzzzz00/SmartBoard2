@@ -17,7 +17,6 @@ class Board;
 
 struct Stroke {
     QVector<QPointF> pts;
-    QVector<double>  sw;
     QVector<double>  ww;
     QColor           color;
     BtnType          type = BRUSH_BTN;
@@ -111,7 +110,7 @@ private:
     double m_clickThreshold = 5.0; // ★ 新增：点击判定阈值（像素），小于此值视为原地点击
     
     // ★ 新增：将当前笔画替换为圆形
-    void makeCircleStroke(Stroke& stroke, const QPointF& centerImg, double radiusScreen);
+    static void makeCircleStroke(Stroke& stroke, const QPointF& centerImg, double radiusScreen);
 
 public slots:
     void OnChangeBtnModeEvent(BtnType type);

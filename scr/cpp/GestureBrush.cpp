@@ -6,9 +6,117 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMouseEvent>
+#include <QPainterPath>
 
 #include <cmath>
 #include <iostream>
+
+// ═══════════════════════════════════════════════════════════
+//  ★ 轮廓构建：中心线 + 宽度数组 → 闭合贝塞尔多边形
+// ═══════════════════════════════════════════════════════════
+static QPainterPath buildOutline(const QVector<QPointF>& pts, const QVector<double>& widths)
+{
+    const qsizetype n = pts.size();
+    if (n == 0) return {};
+
+    if (n == 1) {
+        QPainterPath p;
+        const double r = widths[0] / 2.0;
+        p.addEllipse(pts[0], r, r);
+        p.setFillRule(Qt::WindingFill);
+        return p;
+    }
+
+    QVector<QPointF> left, right, dirs;
+    left.reserve(n);
+    right.reserve(n);
+    dirs.reserve(n);
+
+    for (qsizetype i = 0; i < n; ++i) {
+        QPointF dir;
+        if (i == 0)          dir = pts[1] - pts[0];
+        else if (i == n - 1) dir = pts[n - 1] - pts[n - 2];
+        else                 dir = pts[i + 1] - pts[i - 1];
+        dirs.append(dir);
+
+        const double len = std::hypot(dir.x(), dir.y());
+        if (len < 1e-6) {
+            if (!left.isEmpty()) {
+                left.append(left.last());
+                right.append(right.last());
+            }
+            continue;
+        }
+
+        const double nx = -dir.y() / len;
+        const double ny =  dir.x() / len;
+        const double halfW = widths[i] / 2.0;
+
+        left.append(QPointF(pts[i].x() + nx * halfW, pts[i].y() + ny * halfW));
+        right.append(QPointF(pts[i].x() - nx * halfW, pts[i].y() - ny * halfW));
+    }
+
+    QPainterPath path;
+    path.moveTo(left.first());
+
+    // 左侧贝塞尔平滑
+    for (qsizetype i = 1; i < left.size() - 1; ++i) {
+        const QPointF mid((left[i].x() + left[i + 1].x()) / 2.0,
+                          (left[i].y() + left[i + 1].y()) / 2.0);
+        path.quadTo(left[i], mid);
+    }
+    if (left.size() > 1) path.lineTo(left.last());
+
+    // ★ 末端圆头：用 quadTo 逼近半圆，控制点 = 圆心 + 前进方向单位向量 * radius * k
+    // k = 4/3 ≈ 1.333 是二次贝塞尔逼近半圆的最佳系数（实际略大，用 1.3 视觉更好）
+    {
+        const QPointF& endL = left.last();
+        const QPointF& endR = right.last();
+        const QPointF center((endL.x() + endR.x()) / 2.0, (endL.y() + endR.y()) / 2.0);
+        if (const double radius = std::hypot(endL.x() - endR.x(), endL.y() - endR.y()) / 2.0; radius > 1e-6) {
+            // 前进方向单位向量
+            const QPointF& d = dirs.last();
+            const double dlen = std::hypot(d.x(), d.y());
+            const QPointF fwd(d.x() / dlen, d.y() / dlen);
+            // 控制点：圆心沿前进方向偏移
+            const QPointF ctrl(center.x() + fwd.x() * radius * 1.3,
+                               center.y() + fwd.y() * radius * 1.3);
+            path.quadTo(ctrl, endR);
+        } else {
+            path.lineTo(endR);
+        }
+    }
+
+    // 右侧贝塞尔平滑（逆序）
+    for (qsizetype i = right.size() - 2; i > 0; --i) {
+        const QPointF mid((right[i].x() + right[i - 1].x()) / 2.0,
+                          (right[i].y() + right[i - 1].y()) / 2.0);
+        path.quadTo(right[i], mid);
+    }
+    if (right.size() > 1) path.lineTo(right.first());
+
+    // ★ 首端圆头：控制点 = 圆心 - 前进方向单位向量 * radius * 1.3（向后凸）
+    {
+        const QPointF& startR = right.first();
+        const QPointF& startL = left.first();
+        const QPointF center((startR.x() + startL.x()) / 2.0, (startR.y() + startL.y()) / 2.0);
+        if (const double radius = std::hypot(startR.x() - startL.x(), startR.y() - startL.y()) / 2.0; radius > 1e-6) {
+            const QPointF& d = dirs.first();
+            const double dlen = std::hypot(d.x(), d.y());
+            const QPointF fwd(d.x() / dlen, d.y() / dlen);
+            // 控制点：圆心沿前进方向的反方向偏移（向后凸出）
+            const QPointF ctrl(center.x() - fwd.x() * radius * 1.3,
+                               center.y() - fwd.y() * radius * 1.3);
+            path.quadTo(ctrl, startL);
+        } else {
+            path.lineTo(startL);
+        }
+    }
+
+    path.closeSubpath();
+    path.setFillRule(Qt::WindingFill);
+    return path;
+}
 
 // ═══════════════════════════════════════════════════════════
 GestureBrush::GestureBrush(
@@ -33,7 +141,7 @@ GestureBrush::GestureBrush(
     m_standaloneMode = (parent == nullptr);
     loadPenSettings();
 
-    // 加载图像
+    // 加载橡皮擦图像
     m_eraserPixmap = QPixmap(QStringLiteral("../res/btn_image/eraser.png"));
     const qreal dpi_radio = devicePixelRatioF();
     const int eraser_w = static_cast<int>(m_eraserWidth * dpi_radio);
@@ -52,7 +160,8 @@ void GestureBrush::loadPenSettings()
 {
     const QString path = QDir::currentPath() + "/../data/pen_settings.json";
     if (QFile file(path); file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        if (const QJsonDocument doc = QJsonDocument::fromJson(file.readAll()); doc.isObject()) m_penSettings = doc.object();
+        if (const QJsonDocument doc = QJsonDocument::fromJson(file.readAll()); doc.isObject())
+            m_penSettings = doc.object();
     }
     m_penWidthMode = m_penSettings.value("width_mode").toString(QStringLiteral("freeze"));
     m_penWriteMode = m_penSettings.value("write_mode").toString(QStringLiteral("pen"));
@@ -62,9 +171,11 @@ void GestureBrush::loadPenSettings()
 }
 
 // ═══════════════════════════════════════════════════════════
-
 double GestureBrush::curScreenWidth() const
 {
+    if (m_type == ERASER_BTN)
+        return m_eraserWidth;          // ★ 加这一行
+
     if (m_penWriteMode == "pen")
         return std::max(m_thickness + m_thicknessDelta, 0.5);
     return m_thickness;
@@ -92,16 +203,15 @@ QPointF GestureBrush::applyEma(const QPointF& raw)
     const double a = m_smoothAlpha;
     const QPointF prev = *m_smoothedPos;
     m_smoothedPos = QPointF(a * raw.x() + (1.0 - a) * prev.x(),
-        a * raw.y() + (1.0 - a) * prev.y());
+                            a * raw.y() + (1.0 - a) * prev.y());
     return *m_smoothedPos;
 }
 
 // ═══════════════════════════════════════════════════════════
-//  ★ 离屏缓存：把已完成的笔迹一次性渲染到 QPixmap
+//  ★ 离屏缓存
 // ═══════════════════════════════════════════════════════════
 void GestureBrush::rebuildCache()
 {
-    // 按设备像素比创建缓存，保证清晰度
     const qreal dpr = devicePixelRatioF();
     m_cache = QPixmap(size() * dpr);
     m_cache.setDevicePixelRatio(dpr);
@@ -109,9 +219,7 @@ void GestureBrush::rebuildCache()
 
     QPainter p(&m_cache);
     p.setRenderHint(QPainter::RenderHint::Antialiasing, true);
-    p.setBrush(Qt::BrushStyle::NoBrush);
 
-    // 只渲染已完成的笔迹（不含当前正在画的那一笔）
     for (int i = 0; i < m_strokes.size(); ++i) {
         if (i == m_curIndex) continue;
         drawStroke(p, m_strokes[i]);
@@ -121,23 +229,20 @@ void GestureBrush::rebuildCache()
 }
 
 // ═══════════════════════════════════════════════════════════
-//  绘制
+//  绘制入口
 // ═══════════════════════════════════════════════════════════
 void GestureBrush::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
-    if (!m_standaloneMode) return;   // 非独立模式由 Board 调用 paintStrokes
+    if (!m_standaloneMode) return;
 
     QPainter p(this);
 
-    // ★ 先画缓存（一次 drawPixmap，O(1)）
     if (m_cacheDirty) rebuildCache();
     p.drawPixmap(0, 0, m_cache);
 
-    // ★ 再画当前正在进行的笔迹（只有这一笔，点数很少）
     if (m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
         p.setRenderHint(QPainter::RenderHint::Antialiasing, true);
-        p.setBrush(Qt::BrushStyle::NoBrush);
         drawStroke(p, m_strokes[m_curIndex]);
     }
     p.end();
@@ -146,123 +251,62 @@ void GestureBrush::paintEvent(QPaintEvent* event)
 void GestureBrush::paintStrokes(QPainter& painter)
 {
     painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
-    painter.setBrush(Qt::BrushStyle::NoBrush);
     for (const Stroke& st : m_strokes)
         drawStroke(painter, st);
 }
 
+// ═══════════════════════════════════════════════════════════
+//  ★ 核心绘制：全部使用填充多边形
+// ═══════════════════════════════════════════════════════════
 void GestureBrush::drawStroke(QPainter& painter, const Stroke& st) const
 {
-    const auto n = st.pts.size();
+    const qsizetype n = st.pts.size();
     if (n == 0) return;
 
-    // ★★★★★ 橡皮擦单独处理 ★★★★★
+    // ★★★★★ 橡皮擦 ★★★★★
     if (st.type == ERASER_BTN) {
         painter.setCompositionMode(QPainter::CompositionMode_Clear);
         painter.setRenderHint(QPainter::RenderHint::Antialiasing, false);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(Qt::black);
 
-        // ★ 判断是否为当前正在绘制的笔画
         const bool isActive = (m_curIndex >= 0
-                               && m_curIndex < m_strokes.size()
+                               && m_curIndex < static_cast<int>(m_strokes.size())
                                && &st == &m_strokes[m_curIndex]);
 
+        QVector<double> eraserWidths;
+        eraserWidths.reserve(n);
         if (isActive) {
-            // ── 正在拖拽：屏幕恒定大小（cosmetic pen）──
-            QPen eraserPen(Qt::black, m_eraserWidth,
-                           Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin);
-            eraserPen.setCosmetic(true);   // ★ 关键：屏幕像素恒定
-            painter.setPen(eraserPen);
+            const double worldW = m_eraserWidth / st.freezeScale;
+            for (qsizetype i = 0; i < n; ++i) eraserWidths.append(worldW);
         } else {
-            // ── 已完成笔画：世界坐标宽度，随画布缩放 ──
-            const double worldWidth = m_eraserWidth / st.freezeScale;
-            QPen eraserPen(Qt::black, worldWidth,
-                           Qt::SolidLine, Qt::SquareCap, Qt::RoundJoin);
-            eraserPen.setCosmetic(false);  // ★ 关键：随 transform 缩放
-            painter.setPen(eraserPen);
+            eraserWidths = st.ww;
         }
 
-        if (n == 1) {
-            QPainterPath dot;
-            dot.moveTo(st.pts.at(0));
-            dot.lineTo(st.pts.at(0));
-            painter.drawPath(dot);
-        } else {
-            QPainterPath path;
-            path.moveTo(st.pts.first());
-            for (int i = 1; i < n; ++i)
-                path.lineTo(st.pts[i]);
-            painter.drawPath(path);
-        }
+        painter.drawPath(buildOutline(st.pts, eraserWidths));
 
-        // 恢复默认状态
         painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
         painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
         return;
     }
 
-    // ===== 以下仅处理普通画笔 =====
-    const bool cosmetic = (m_penWidthMode == u"screen_constant");
-    const QVector<double>& widths = cosmetic ? st.sw : st.ww;
-
-    QPen pen;
-    pen.setStyle(Qt::PenStyle::SolidLine);
-    pen.setCapStyle(Qt::PenCapStyle::RoundCap);
-    pen.setJoinStyle(Qt::PenJoinStyle::RoundJoin);
-    pen.setCosmetic(cosmetic);
-
+    // ===== 普通画笔 =====
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
     painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
-    pen.setColor(st.color);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(st.color);
 
-    if (n == 1) {
-        pen.setWidthF(widths.at(0));
-        painter.setPen(pen);
-        QPainterPath dot;
-        dot.moveTo(st.pts.at(0));
-        dot.lineTo(st.pts.at(0));
-        painter.drawPath(dot);
-        return;
-    }
-
-    QVector<QPointF> anchors;
-    anchors.reserve(n);
-    anchors.append(st.pts.first());
-    for (int i = 1; i < n - 1; ++i)
-        anchors.append(QPointF((st.pts[i].x() + st.pts[i + 1].x()) / 2.0,
-                               (st.pts[i].y() + st.pts[i + 1].y()) / 2.0));
-    anchors.append(st.pts.last());
-
-    int j = 0;
-    while (j < n - 1) {
-        const double w = widths.at(j + 1);
-        pen.setWidthF(w);
-        painter.setPen(pen);
-
-        QPainterPath seg;
-        seg.moveTo(anchors[j]);
-        seg.quadTo(st.pts[j + 1], anchors[j + 1]);
-
-        int k = j + 1;
-        while (k < n - 1 && std::abs(widths.at(k + 1) - w) < 0.01) {
-            seg.quadTo(st.pts[k + 1], anchors[k + 1]);
-            ++k;
-        }
-
-        painter.drawPath(seg);
-        j = k;
-    }
+    painter.drawPath(buildOutline(st.pts, st.ww));
 }
 
+// ═══════════════════════════════════════════════════════════
 void GestureBrush::requestRepaint()
 {
     if (m_standaloneMode) {
         update();
-    }
-    else {
-        // ★ 补全：通知 Board 重绘（笔迹画在 Board 的 paintEvent 里）
-        if (auto* board = qobject_cast<Board*>(parentWidget())) {
+    } else {
+        if (auto* board = qobject_cast<Board*>(parentWidget()))
             board->update();
-        }
     }
 }
 
@@ -277,7 +321,7 @@ void GestureBrush::mousePressEvent(QMouseEvent* event)
     m_thicknessDelta = -m_originalThickness;
     m_lastSpeed = 0.0;
 
-    // 从父 Board 获取当前 scale
+    // 获取落笔时缩放比
     if (!m_standaloneMode) {
         const auto* board = qobject_cast<const Board*>(parentWidget());
         m_s0 = board ? board->scale() : 1.0;
@@ -287,15 +331,15 @@ void GestureBrush::mousePressEvent(QMouseEvent* event)
 
     const double sw = curScreenWidth();
     const QPointF w = toImgCoord(raw);
+    const double ww = sw / m_s0; // ★ 统一转为世界坐标线宽
 
     Stroke s;
-    s.pts   = { w };
-    s.sw    = { sw };
-    s.ww    = { sw / m_s0 };
-    s.color = m_penColor;
-    s.type  = m_type;
-    s.freezeScale = m_s0;          // ★ 新增：记录落笔时的缩放比
-    m_pressPos = raw;
+    s.pts         = { w };
+    s.ww          = { ww };
+    s.color       = m_penColor;
+    s.type        = m_type;
+    s.freezeScale = m_s0;
+    m_pressPos    = raw;
 
     m_strokes.append(std::move(s));
     m_curIndex = static_cast<int>(m_strokes.size()) - 1;
@@ -310,9 +354,9 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
 
     const QPointF raw = event->position();
 
-    // 绘制橡皮
+    // 橡皮擦图标跟随
     if (m_type == ERASER_BTN) {
-        if (!m_eraserLabel->isVisible()) {m_eraserLabel->show();}
+        if (!m_eraserLabel->isVisible()) m_eraserLabel->show();
         const double cx = raw.x() - m_eraserLabel->width()  / 2.0;
         const double cy = raw.y() - m_eraserLabel->height() / 2.0;
         m_eraserLabel->move(qRound(cx), qRound(cy));
@@ -322,14 +366,14 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
     if (!filtered) return;
     const QPointF smoothed = applyEma(*filtered);
 
+    // 压感/速度动态笔宽
     if (m_penWriteMode.toStdString() == "pen") {
         const double speed = distance(raw, smoothed) / m_thickness;
         if (speed > m_lastSpeed) {
             m_thicknessDelta -= m_thicknessDeltaStep;
             if (m_thicknessDelta < -m_thickness + m_minThickness)
                 m_thicknessDelta = -m_thickness + m_minThickness;
-        }
-        else if (speed < m_lastSpeed) {
+        } else if (speed < m_lastSpeed) {
             m_thicknessDelta += m_thicknessDeltaStep;
             if (m_thicknessDelta > 0.0) m_thicknessDelta = 0.0;
         }
@@ -338,36 +382,30 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
 
     const double sw = curScreenWidth();
     const QPointF w = toImgCoord(smoothed);
+    const double ww = sw / m_s0; // ★ 世界坐标线宽
 
     if (m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
         Stroke& cur = m_strokes[m_curIndex];
         cur.pts.append(w);
-        cur.sw.append(sw);
-        cur.ww.append(sw / m_s0);
+        cur.ww.append(ww);
     }
 
     emit strokesChangedSignal();
-
     requestRepaint();
 }
 
 void GestureBrush::mouseReleaseEvent(QMouseEvent* event)
 {
     if (m_isDragging) {
-        // ★ 判断是否为原地点击
         const QPointF releasePos = event->position();
-        const bool isClick = (distance(m_pressPos, releasePos) < m_clickThreshold);
-        
-        if (isClick && m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
-            // 原地点击 → 画圆
+
+        if (const bool isClick = (distance(m_pressPos, releasePos) < m_clickThreshold); isClick && m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
             Stroke& cur = m_strokes[m_curIndex];
             const double sw = curScreenWidth();
             const QPointF centerImg = toImgCoord(m_pressPos);
-            
-            // 以当前笔刷宽度的一半作为圆半径，画出一个饱满的圆
             makeCircleStroke(cur, centerImg, sw / 2.0);
         }
-        
+
         m_smoothedPos.reset();
         m_curIndex = -1;
         m_isDragging = false;
@@ -378,15 +416,14 @@ void GestureBrush::mouseReleaseEvent(QMouseEvent* event)
         QWidget::mouseReleaseEvent(event);
     }
 
-    if (m_type == ERASER_BTN) {
+    if (m_type == ERASER_BTN)
         m_eraserLabel->hide();
-    }
 }
 
 void GestureBrush::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-    m_cacheDirty = true;   // ★ 尺寸变了，缓存也要重建
+    m_cacheDirty = true;
 }
 
 QPointF GestureBrush::toImgCoord(const QPointF& windowPos) const
@@ -400,9 +437,6 @@ QPointF GestureBrush::toImgCoord(const QPointF& windowPos) const
             const double cx = board->m_viewer.imgW() / 2.0;
             const double cy = board->m_viewer.imgH() / 2.0;
 
-            // ★ 正向变换: img→screen 的逆变换 screen→img
-            // 正向: translate(posX,posY) → scale(s) → translate(cx,cy) → rotate(r) → translate(-cx,-cy)
-            // 逆向: translate(cx,cy) → rotate(-r) → translate(-cx,-cy) → scale(1/s) → translate(-posX,-posY)
             QTransform inv;
             inv.translate(cx, cy);
             inv.rotate(-rotation);
@@ -416,32 +450,27 @@ QPointF GestureBrush::toImgCoord(const QPointF& windowPos) const
     return windowPos;
 }
 
-void GestureBrush::OnChangeBtnModeEvent(const BtnType type) {
+void GestureBrush::OnChangeBtnModeEvent(const BtnType type)
+{
     m_type = type;
 }
 
-void GestureBrush::OnChangeScaleEvent(const double scale) {
+void GestureBrush::OnChangeScaleEvent(const double scale)
+{
     m_scale = scale;
 }
 
-void GestureBrush::makeCircleStroke(Stroke& stroke, const QPointF& centerImg, double radiusScreen)
+// ═══════════════════════════════════════════════════════════
+//  ★ 点击画圆：生成单点+直径，buildOutline 自动处理为实心圆
+// ═══════════════════════════════════════════════════════════
+void GestureBrush::makeCircleStroke(Stroke& stroke, const QPointF& centerImg, const double radiusScreen)
 {
-    // 使用固定数量的线段逼近圆形，36个点足够平滑
-    constexpr int segments = 36;
     const double worldRadius = radiusScreen / stroke.freezeScale;
-    
+    const double diameter = worldRadius * 2.0;
+
     stroke.pts.clear();
-    stroke.sw.clear();
     stroke.ww.clear();
-    
-    for (int i = 0; i <= segments; ++i) {
-        const double angle = 2.0 * M_PI * i / segments;
-        // 在世界坐标系下生成圆上的点
-        const QPointF pt(centerImg.x() + worldRadius * std::cos(angle),
-                         centerImg.y() + worldRadius * std::sin(angle));
-        
-        stroke.pts.append(pt);
-        stroke.sw.append(radiusScreen * 2.0);  // 线宽 = 直径（视觉上较粗的圆环）
-        stroke.ww.append(worldRadius * 2.0);
-    }
+
+    stroke.pts.append(centerImg);
+    stroke.ww.append(diameter);
 }
