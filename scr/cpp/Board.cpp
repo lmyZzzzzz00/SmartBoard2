@@ -162,6 +162,8 @@ void Board::animate()
     if (const double diff = m_targetScale - m_scale; std::abs(diff) < 0.001) {
         m_scale = m_targetScale;
         m_timer->stop();
+        Stroke& cur = m_gestureBrush->m_strokes[m_gestureBrush->m_curIndex];
+        m_gestureBrush->addTail(cur);
     }
     else {
         m_scale += diff * 0.35;

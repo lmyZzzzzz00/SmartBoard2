@@ -166,7 +166,8 @@ void GestureBrush::loadPenSettings()
     m_penWidthMode = m_penSettings.value("width_mode").toString(QStringLiteral("freeze"));
     m_penWriteMode = m_penSettings.value("write_mode").toString(QStringLiteral("pen"));
     m_thicknessDeltaStep = m_penSettings.value("thicknessDeltaStep").toDouble(0.5);
-    m_speed_threshold = m_penSettings.value("speed_threshold").toDouble(5.0);
+    m_pointsThreshold = m_penSettings.value("points_threshold").toInt(20);
+    m_fixed_points = m_penSettings.value("fixed_points").toInt(3);
 
     std::cout << "m_penWriteMode: " << m_penWriteMode.toStdString() << std::endl;
 }
@@ -252,14 +253,39 @@ void GestureBrush::paintEvent(QPaintEvent* event)
 void GestureBrush::paintStrokes(QPainter& painter)
 {
     painter.setRenderHint(QPainter::RenderHint::Antialiasing, true);
-    for (const Stroke& st : m_strokes)
+    for (Stroke& st : m_strokes)
         drawStroke(painter, st);
+}
+
+void GestureBrush::addTail(Stroke &st) {
+    // 处理尖尾逻辑
+    if (const int size = static_cast<int>(st.ww.size()); size > 0) {
+        std::cout << "size: " << size << std::endl;
+        int need_to_deal_size;
+        if (size > m_pointsThreshold) {
+            // 此时只能使用固定点位数，否则画笔会异常尖尾
+            need_to_deal_size = m_fixed_points;
+        }
+        else {
+            need_to_deal_size = static_cast<int>(size * 0.2);
+        }
+        if (need_to_deal_size == 0) { need_to_deal_size = 1; }
+        for (int i = 0; i < size; ++i) {
+            if (i >= size - need_to_deal_size) {
+                // j = 0, 1, 2, ..., need_to_deal_size - 1
+                const int j = i - (size - need_to_deal_size);
+                // f 从 1.0 线性递减到接近 0
+                const double f = 1.0 - static_cast<double>(j) / need_to_deal_size;
+                st.ww[i] = st.ww[i] * f;
+            }
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════
 //  ★ 核心绘制：全部使用填充多边形
 // ═══════════════════════════════════════════════════════════
-void GestureBrush::drawStroke(QPainter& painter, const Stroke& st) const
+void GestureBrush::drawStroke(QPainter& painter, Stroke& st) const
 {
     const qsizetype n = st.pts.size();
     if (n == 0) return;
@@ -385,13 +411,8 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
     const QPointF w = toImgCoord(smoothed);
     const double ww = sw / m_s0; // ★ 世界坐标线宽
 
-    // 下面开始检测是否要尖尾
-    if (speed > m_speed_threshold) {
-        std::cout << "需要尖尾！当前速度：" << speed << std::endl;
-    }
-
+    Stroke& cur = m_strokes[m_curIndex];
     if (m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
-        Stroke& cur = m_strokes[m_curIndex];
         cur.pts.append(w);
         cur.ww.append(ww);
     }
@@ -400,24 +421,34 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
     requestRepaint();
 }
 
+// ═══════════════════════════════════════════════════════════
 void GestureBrush::mouseReleaseEvent(QMouseEvent* event)
 {
     if (m_isDragging) {
         const QPointF releasePos = event->position();
+        const bool isClick = (distance(m_pressPos, releasePos) < m_clickThreshold);
 
-        if (const bool isClick = (distance(m_pressPos, releasePos) < m_clickThreshold); isClick && m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
+        // ★ 先处理笔画数据，再重置状态！
+        if (m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
             Stroke& cur = m_strokes[m_curIndex];
-            const double sw = curScreenWidth();
-            const QPointF centerImg = toImgCoord(m_pressPos);
-            makeCircleStroke(cur, centerImg, sw / 2.0);
+
+            if (isClick) {
+                const double sw = curScreenWidth();
+                const QPointF centerImg = toImgCoord(m_pressPos);
+                makeCircleStroke(cur, centerImg, sw / 2.0);
+            } else if (m_type == BRUSH_BTN) {
+                // ★ 在 m_curIndex 有效时调用 addTail
+                addTail(cur);
+            }
         }
 
+        // ★ 数据修改完毕后，再重置状态并刷新
         m_smoothedPos.reset();
         m_curIndex = -1;
         m_isDragging = false;
-        m_cacheDirty = true;
+        m_cacheDirty = true;  // ★ 关键：尖尾修改了ww，必须重建缓存
         event->accept();
-        requestRepaint();
+        requestRepaint();     // ★ 关键：触发重绘
     } else {
         QWidget::mouseReleaseEvent(event);
     }

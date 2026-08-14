@@ -38,7 +38,13 @@ public:
         double  deadZone = 1.5,
         QWidget* parent = nullptr);
 
+    QVector<Stroke> m_strokes;
+    int             m_curIndex = -1;
+    double          m_s0 = 1.0;
+
     void paintStrokes(QPainter& painter);
+
+    void addTail(Stroke &st);
 
     [[nodiscard]] const QVector<Stroke>& strokes() const { return m_strokes; }
     [[nodiscard]] const QString& penWidthMode()    const { return m_penWidthMode; }
@@ -58,7 +64,7 @@ private:
     [[nodiscard]] std::optional<QPointF> applyDeadZone(const QPointF& raw) const;
     QPointF                applyEma(const QPointF& raw);
 
-    void drawStroke(QPainter& painter, const Stroke& st) const;
+    void drawStroke(QPainter &painter, Stroke &st) const;
     // void drawStrokeSegment(QPainter& painter, const Stroke& st, int fromIdx);
     void requestRepaint();
     void loadPenSettings();
@@ -77,14 +83,11 @@ private:
     double  m_deadZone;
     std::optional<QPointF> m_smoothedPos;
 
+    QJsonObject m_penSettings;
     QString     m_penWidthMode;
     QString     m_penWriteMode;
-    QJsonObject m_penSettings;
-    double      m_speed_threshold=0.5;   // 尖尾速度阈值
-
-    QVector<Stroke> m_strokes;
-    int             m_curIndex = -1;
-    double          m_s0 = 1.0;
+    int         m_pointsThreshold = 20;
+    int         m_fixed_points = 0;   // 固定的尖尾点数
 
     // ★ 离屏缓存
     QPixmap m_cache;          // 已完成笔迹的渲染结果
