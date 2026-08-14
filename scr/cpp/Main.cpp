@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     }
     else {
         board.resize(800, 600);
-        board.move(80, 20);
+        board.move(150, 20);
     }
     board.show();
 

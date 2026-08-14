@@ -80,6 +80,7 @@ private:
     QString     m_penWidthMode;
     QString     m_penWriteMode;
     QJsonObject m_penSettings;
+    double      m_speed_threshold=0.5;   // 尖尾速度阈值
 
     QVector<Stroke> m_strokes;
     int             m_curIndex = -1;

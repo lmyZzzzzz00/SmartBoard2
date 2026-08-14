@@ -1,6 +1,7 @@
 ﻿{
   "write_mode": "normal",
   "width_mode": "freeze",
-  "thickness": 2.0,
-  "m_thicknessDeltaStep": 0.3
+  "thickness": 1.5,
+  "thicknessDeltaStep": 0.5,
+  "speed_threshold": 2.0
 }

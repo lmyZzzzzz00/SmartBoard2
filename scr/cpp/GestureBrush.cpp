@@ -165,7 +165,8 @@ void GestureBrush::loadPenSettings()
     }
     m_penWidthMode = m_penSettings.value("width_mode").toString(QStringLiteral("freeze"));
     m_penWriteMode = m_penSettings.value("write_mode").toString(QStringLiteral("pen"));
-    m_thicknessDeltaStep = m_penSettings.value(u"m_thicknessDeltaStep").toDouble(0.5);
+    m_thicknessDeltaStep = m_penSettings.value("thicknessDeltaStep").toDouble(0.5);
+    m_speed_threshold = m_penSettings.value("speed_threshold").toDouble(5.0);
 
     std::cout << "m_penWriteMode: " << m_penWriteMode.toStdString() << std::endl;
 }
@@ -366,9 +367,9 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
     if (!filtered) return;
     const QPointF smoothed = applyEma(*filtered);
 
+    const double speed = distance(raw, smoothed) / m_thickness;
     // 压感/速度动态笔宽
     if (m_penWriteMode.toStdString() == "pen") {
-        const double speed = distance(raw, smoothed) / m_thickness;
         if (speed > m_lastSpeed) {
             m_thicknessDelta -= m_thicknessDeltaStep;
             if (m_thicknessDelta < -m_thickness + m_minThickness)
@@ -383,6 +384,11 @@ void GestureBrush::mouseMoveEvent(QMouseEvent* event)
     const double sw = curScreenWidth();
     const QPointF w = toImgCoord(smoothed);
     const double ww = sw / m_s0; // ★ 世界坐标线宽
+
+    // 下面开始检测是否要尖尾
+    if (speed > m_speed_threshold) {
+        std::cout << "需要尖尾！当前速度：" << speed << std::endl;
+    }
 
     if (m_curIndex >= 0 && m_curIndex < m_strokes.size()) {
         Stroke& cur = m_strokes[m_curIndex];
