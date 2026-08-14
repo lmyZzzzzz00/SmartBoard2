@@ -260,7 +260,7 @@ void GestureBrush::paintStrokes(QPainter& painter)
 void GestureBrush::addTail(Stroke &st) {
     // 处理尖尾逻辑
     if (const int size = static_cast<int>(st.ww.size()); size > 0) {
-        std::cout << "size: " << size << std::endl;
+        // std::cout << "size: " << size << std::endl;
         int need_to_deal_size;
         if (size > m_pointsThreshold) {
             // 此时只能使用固定点位数，否则画笔会异常尖尾
