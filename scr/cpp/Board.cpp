@@ -46,6 +46,7 @@ Board::Board(const QString& imgPath, const int width, const int height, QWidget*
 
     if (const auto bgArr = m_bgSettings.value("bg_color").toArray(); bgArr.size() >= 3) {
         m_bgColor = QColor(bgArr[0].toInt(), bgArr[1].toInt(), bgArr[2].toInt());
+        std::cout << "bgColor: " << m_bgColor.red() << ", " << m_bgColor.green() << ", " << m_bgColor.blue() << std::endl;
     }
     else {
         m_bgColor = QColor(50, 50, 50);
@@ -293,9 +294,9 @@ void Board::paintEvent(QPaintEvent* event)
     bg_transform.translate(cx, cy);
     bg_transform.rotate(m_rotation);
     bg_transform.translate(-cx, -cy);
+    
+    screen_painter.fillRect(rect(), m_bgColor);
     screen_painter.setTransform(bg_transform);
-
-    screen_painter.fillRect(QRect(0, 0, m_viewer.imgW(), m_viewer.imgH()), m_bgColor);
     screen_painter.drawImage(0, 0, m_viewer.originalImage());
 
     // 【第2层】创建视口大小的透明缓冲（★ 关键修正）

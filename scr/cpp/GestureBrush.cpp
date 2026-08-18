@@ -132,11 +132,11 @@ GestureBrush::GestureBrush(
     , m_smoothAlpha(smoothAlpha)
     , m_deadZone(deadZone)
 {
-    resize(width, height);
-
     setAttribute(Qt::WidgetAttribute::WA_TranslucentBackground, true);
     setAttribute(Qt::WidgetAttribute::WA_NoSystemBackground, true);
     setMouseTracking(true);
+
+    resize(width, height);
 
     m_standaloneMode = (parent == nullptr);
     loadPenSettings();
@@ -236,7 +236,9 @@ void GestureBrush::rebuildCache()
 void GestureBrush::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);
-    if (!m_standaloneMode) return;
+    if (!m_standaloneMode) {
+        return;
+    }
 
     QPainter p(this);
 
