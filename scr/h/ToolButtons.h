@@ -6,7 +6,10 @@
 #include "../h/BtnTypes.h"
 
 
-class ToolButtons: public QObject
+class BrushTools;
+
+
+class ToolButtons: public QWidget
 {
     Q_OBJECT
 public:
@@ -24,6 +27,8 @@ public:
     SingleToolBtn* m_smaller_btn;
 
     SingleToolBtn *m_btn_array[BtnCount];
+
+    BrushTools* m_brush_tools;
 
     BtnType m_now_btn_type;
     int m_buttons_num;

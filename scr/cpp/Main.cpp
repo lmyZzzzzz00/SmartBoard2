@@ -7,6 +7,7 @@
 #include "../h/ToolButtons.h"
 #include "../h/BtnTypes.h"
 #include "../h/GestureBrush.h"
+#include "../../res/ui/BrushTools.h"
 
 #include <iostream>
 
@@ -48,6 +49,7 @@ int main(int argc, char* argv[])
     board.show();
 
     ToolButtons toolButtons(&board);
+    board.m_toolButtons = &toolButtons;
 
     // 绑定信号与槽
     QObject::connect(&board, &Board::resized, &toolButtons, &ToolButtons::OnResizeEvent);
@@ -65,6 +67,8 @@ int main(int argc, char* argv[])
     QObject::connect(&board, &Board::changeToCursorModeSignal, toolButtons.m_bigger_btn, &SingleToolBtn::OnChangeToCursorModeEvent);
     QObject::connect(&board, &Board::changeToCursorModeSignal, toolButtons.m_smaller_btn, &SingleToolBtn::OnChangeToCursorModeEvent);
     QObject::connect(&board, &Board::changeToCursorModeSignal, toolButtons.m_rotate_btn, &SingleToolBtn::OnChangeToCursorModeEvent);
+    QObject::connect(&board, &Board::BrushToolsHideSignal, toolButtons.m_brush_tools, &BrushTools::OnBtnHidedEvent);
+    QObject::connect(board.m_gestureBrush, &GestureBrush::BrushToolsHideSignal, toolButtons.m_brush_tools, &BrushTools::OnBtnHidedEvent);
 
     board.update();
 

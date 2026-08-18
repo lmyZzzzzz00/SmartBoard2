@@ -36,7 +36,7 @@ public:
         double  thickness = 1.5,
         double  smoothAlpha = 0.4,
         double  deadZone = 1.5,
-        QWidget* parent = nullptr);
+        Board* parent = nullptr);
 
     QVector<Stroke> m_strokes;
     int             m_curIndex = -1;
@@ -122,4 +122,5 @@ public slots:
 
 signals:
     void strokesChangedSignal();
+    void BrushToolsHideSignal();
 };

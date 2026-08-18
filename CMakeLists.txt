@@ -29,6 +29,8 @@ add_executable (SmartBoard
         scr/h/SingleToolBtn.h
         scr/h/BtnTypes.h
         res/ui/BrushToolsUI.h
+        res/ui/BrushTools.cpp
+        res/ui/BrushTools.h
 )
 
 

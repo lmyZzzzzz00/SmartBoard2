@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainVL</class>
- <widget class="QWidget" name="MainVL">
+ <class>BrushToolsUI</class>
+ <widget class="QWidget" name="BrushToolsUI">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -14,8 +14,8 @@
    <string>Form</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">#MainVL{
-	background-color: rgb(245, 245, 245);
+   <string notr="true">#BrushToolsUI{
+	background-color: rgb(255, 255, 255);
 }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -246,6 +246,7 @@
         <string notr="true">#white_btn{
 	background-color: rgb(255, 255, 255);
 	border-radius: 5px;
+	border: 1px solid black;
 }</string>
        </property>
        <property name="text">

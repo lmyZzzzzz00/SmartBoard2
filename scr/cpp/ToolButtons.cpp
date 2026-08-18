@@ -1,5 +1,6 @@
 ﻿#include "../h/ToolButtons.h"
 #include "../h/SingleToolBtn.h"
+#include "../../res/ui/BrushTools.h"
 #include <QWidget>
 #include <QDir>
 
@@ -8,7 +9,11 @@
 
 
 // 这里的m_buttons_num-1是因为第一个m_exit_btn不算
-ToolButtons::ToolButtons(QWidget *parent) : m_btn_array{}, m_buttons_num(BtnCount - 1) {
+ToolButtons::ToolButtons(QWidget *parent) : 
+    m_btn_array{}, 
+    m_buttons_num(BtnCount - 1), 
+    m_brush_tools(new BrushTools(this))
+{
     m_window_width = parent->width();
     m_window_height = parent->height();
     m_dpi_ratio = parent->devicePixelRatioF();
@@ -52,6 +57,7 @@ ToolButtons::ToolButtons(QWidget *parent) : m_btn_array{}, m_buttons_num(BtnCoun
     // 绑定信号与槽
     for (int i=0; i < m_buttons_num+1; ++i) {
         connect(m_btn_array[i], &SingleToolBtn::changeChosenSignal, this, &ToolButtons::OnChangeChosenEvent);
+        connect(m_btn_array[i], &SingleToolBtn::BtnClickedSignal, m_brush_tools, &BrushTools::OnBtnClickedEvent);
     }
 
     updateButtons();

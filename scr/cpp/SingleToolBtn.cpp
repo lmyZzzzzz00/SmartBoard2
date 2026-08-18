@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <QApplication>
+#include <QMouseEvent>
 #include "../h/BtnTypes.h"
 
 
@@ -83,6 +84,15 @@ void SingleToolBtn::mousePressEvent(QMouseEvent *event) {
         emit changeScaleSignal(false);
         std::cout << "缩小" << std::endl;
     }
+
+    if (m_type == BRUSH_BTN) {
+        emit BtnClickedSignal(true);
+    }
+    else {
+        emit BtnClickedSignal(false);
+    }
+
+    event->accept();  // 接受事件
 }
 
 void SingleToolBtn::set_image(const std::string &img_mode) {

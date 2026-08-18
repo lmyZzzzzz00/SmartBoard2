@@ -9,11 +9,14 @@
 
 #include "BtnTypes.h"
 #include "../h/Background.h"
+#include "../h/ToolButtons.h"
 
 
 class GestureBrush;   // 前向声明，避免循环包含
 
 class ZoomableImageViewer;
+
+class ToolButtons;
 
 class Board : public QWidget
 {
@@ -36,6 +39,7 @@ public:
     QString m_window_mode;
 
     GestureBrush* m_gestureBrush = nullptr;
+    ToolButtons* m_toolButtons = nullptr;
 
     int rotation() const { return m_rotation; }
 
@@ -106,6 +110,7 @@ signals:
     void resized(int w, int h);
     void scaleChangedSignal(double scale);
     void changeToCursorModeSignal();
+    void BrushToolsHideSignal();
 
 public slots:
     void OnChangeBtnModeEvent(BtnType type);

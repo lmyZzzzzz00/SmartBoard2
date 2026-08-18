@@ -35,6 +35,7 @@ protected:
 signals:
     void changeChosenSignal(BtnType type);
     void changeScaleSignal(bool is_bigger);     // is_bigger: 是否放大
+    void BtnClickedSignal(bool is_brush_btn);   // 这个信号是专门给BrushTools用的
 public slots:
     void OnChangeToCursorModeEvent();
 };

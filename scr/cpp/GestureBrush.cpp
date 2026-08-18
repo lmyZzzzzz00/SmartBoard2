@@ -123,7 +123,7 @@ GestureBrush::GestureBrush(
     const int width, const int height,
     const QColor bgColor, const QColor penColor,
     const double thickness, const double smoothAlpha, const double deadZone,
-    QWidget* parent)
+    Board* parent)
     : QWidget(parent)
     , m_bgColor(bgColor)
     , m_penColor(penColor)
@@ -344,6 +344,13 @@ void GestureBrush::requestRepaint()
 // ═══════════════════════════════════════════════════════════
 void GestureBrush::mousePressEvent(QMouseEvent* event)
 {
+    // 发射信号
+    if (auto* board = qobject_cast<Board*>(parent())){
+        if (board->m_toolButtons->m_brush_tools != nullptr){
+            emit BrushToolsHideSignal();
+        }
+    }
+
     const QPointF raw = event->position();
     m_smoothedPos = raw;
     m_isDragging = true;

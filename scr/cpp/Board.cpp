@@ -1,5 +1,6 @@
 ﻿#include "../h/Board.h"
 #include "../h/GestureBrush.h"
+#include "../../res/ui/BrushTools.h"
 
 #include <QGestureEvent>
 #include <QKeyEvent>
@@ -129,6 +130,9 @@ void Board::mousePressEvent(QMouseEvent* event)
         m_dragging = true;
         m_lastMousePos = event->pos();
         setCursor(Qt::CursorShape::ClosedHandCursor);
+        if (m_toolButtons != nullptr){
+            emit BrushToolsHideSignal();
+        }
     }
 }
 
@@ -294,7 +298,7 @@ void Board::paintEvent(QPaintEvent* event)
     bg_transform.translate(cx, cy);
     bg_transform.rotate(m_rotation);
     bg_transform.translate(-cx, -cy);
-    
+
     screen_painter.fillRect(rect(), m_bgColor);
     screen_painter.setTransform(bg_transform);
     screen_painter.drawImage(0, 0, m_viewer.originalImage());
