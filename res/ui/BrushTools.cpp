@@ -9,11 +9,14 @@ BrushTools::BrushTools(ToolButtons *parent)
     m_parent(parent)   // 但是实际调用的接口父窗口是ToolButtons
 {
     ui->setupUi(this);
-    this->setStyleSheet("background-color: white;"); // 设置背景颜色为白色
-    // ✅ 修改这里：使用 Popup 或 Tool 代替 WindowStaysOnTopHint
-    // Qt::Popup: 点击外部自动隐藏，且必定随父窗口销毁
-    // Qt::Tool | Qt::FramelessWindowHint: 浮动工具栏行为，绑定父窗口生命周期
-    this->setWindowFlags(Qt::Popup | Qt::FramelessWindowHint); // 设置窗口标志
+    // ✅ 核心修复：无边框 + 置顶于父窗口 + 无任务栏条目
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowDoesNotAcceptFocus);
+    // ✅ 关键属性：确保真正无边框（去除 Windows DWM 残留边框）
+    setAttribute(Qt::WA_ShowWithoutActivating);       // 显示时不抢焦点
+    // ✅ 关键：这两行让窗口的透明区域真正透明（而非被系统背景填充）
+    setAttribute(Qt::WA_TranslucentBackground);   // 允许窗口背景透明
+    setAttribute(Qt::WA_NoSystemBackground);       // 禁止系统绘制默认背景
+    ui->bg_label->setStyleSheet("background-color: white; border-radius: 10px; border: 1px solid gray;");
     // 重新链接图片
     ui->pencil_btn->setPixmap(QPixmap("../res/btn_image/PencilIcon.png"));
     ui->pen_btn->setPixmap(QPixmap("../res/btn_image/PenIcon.png"));
