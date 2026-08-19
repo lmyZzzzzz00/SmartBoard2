@@ -6,7 +6,8 @@
 BrushTools::BrushTools(ToolButtons *parent)
     : QWidget(parent->parentWidget()),   // 注意：这里需要将父窗口设置为祖父窗口(Board)
     ui(new Ui::BrushToolsUI),
-    m_parent(parent)   // 但是实际调用的接口父窗口是ToolButtons
+    m_parent(parent),   // 但是实际调用的接口父窗口是ToolButtons
+    m_timer(new QTimer(this))
 {
     ui->setupUi(this);
     // ✅ 核心修复：无边框 + 置顶于父窗口 + 无任务栏条目
@@ -25,6 +26,13 @@ BrushTools::BrushTools(ToolButtons *parent)
     ui->MiddleBrushBtn->setPixmap(QPixmap("../res/btn_image/MiddleBrushBtn.png"));
     ui->ThickBrushBtn->setPixmap(QPixmap("../res/btn_image/ThickBrushBtn.png"));
     std::cout << "BrushTools created" << std::endl;
+
+    setWindowOpacity(0);
+    show();
+
+    // 定时器
+    m_timer->setInterval(16);
+    connect(m_timer, &QTimer::timeout, this, &BrushTools::anim);
 }
 
 BrushTools::~BrushTools(){
@@ -39,17 +47,19 @@ void BrushTools::OnBtnClickedEvent(){
             int off_x = (this->width() - m_parent->m_brush_btn->width()) / 2;
             int off_y = 10 + this->height();
             move(btnGlobalPos.x() - off_x, btnGlobalPos.y() - off_y);
-            show();
+            m_alpha_direction = 1;   // 增加透明度
             m_first_clicked = false;
         }
         else {
-            hide();
+            m_alpha_direction = -1;   // 减少透明度
             m_first_clicked = true;
         }
     }
     else {
+        m_alpha_direction = -1;   // 减少透明度
         m_first_clicked = false;
     }
+    m_timer->start();
     // TODO: 在此添加代码，完善功能
 }
 
@@ -62,5 +72,30 @@ void BrushTools::OnBtnHidedEvent(){
     else {
         m_first_clicked = false;
     }
-    hide();
+    m_alpha_direction = -1;   // 减少透明度
+    m_timer->start();
+}
+
+void BrushTools::anim() {
+    const double now_alpha = windowOpacity();
+    double new_alpha;
+
+    constexpr double EPSILON = 1e-6; // 浮点比较容差
+
+    if (m_alpha_direction == 1) {
+        new_alpha = now_alpha + (1.0 - now_alpha) * m_alpha_speed;
+        // ✅ 用容差代替精确比较
+        if (new_alpha >= 1.0 - EPSILON) {
+            new_alpha = 1.0;       // 强制钳位到精确值
+            m_timer->stop();
+        }
+    } else {
+        new_alpha = now_alpha - now_alpha * m_alpha_speed;
+        if (new_alpha <= EPSILON) {
+            new_alpha = 0.0;
+            m_timer->stop();
+        }
+    }
+
+    setWindowOpacity(new_alpha);
 }
