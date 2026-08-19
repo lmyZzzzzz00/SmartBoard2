@@ -62,8 +62,8 @@
       <property name="rightMargin">
        <number>71</number>
       </property>
-      <item row="5" column="2">
-       <widget class="QLabel" name="brush_btn">
+      <item row="5" column="0">
+       <widget class="QLabel" name="pencil_btn">
         <property name="cursor">
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
@@ -71,20 +71,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>../btn_image/BrushIcon.png</pixmap>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="ThinBrushBtn">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>../btn_image/ThinBrushBtn.png</pixmap>
+         <pixmap>../btn_image/PencilIcon.png</pixmap>
         </property>
        </widget>
       </item>
@@ -101,8 +88,8 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
-       <widget class="QLabel" name="MiddleBrushBtn">
+      <item row="5" column="2">
+       <widget class="QLabel" name="brush_btn">
         <property name="cursor">
          <cursorShape>PointingHandCursor</cursorShape>
         </property>
@@ -110,20 +97,7 @@
          <string/>
         </property>
         <property name="pixmap">
-         <pixmap>../btn_image/MiddleBrushBtn.png</pixmap>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="pencil_btn">
-        <property name="cursor">
-         <cursorShape>PointingHandCursor</cursorShape>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="pixmap">
-         <pixmap>../btn_image/PencilIcon.png</pixmap>
+         <pixmap>../btn_image/BrushIcon.png</pixmap>
         </property>
        </widget>
       </item>
@@ -137,6 +111,32 @@
         </property>
         <property name="pixmap">
          <pixmap>../btn_image/PenIcon.png</pixmap>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="ThinBrushBtn">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>../btn_image/ThinBrushBtn.png</pixmap>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QLabel" name="MiddleBrushBtn">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>../btn_image/MiddleBrushBtn.png</pixmap>
         </property>
        </widget>
       </item>
@@ -233,6 +233,7 @@
          <string notr="true">#red_btn{
 	background-color: rgb(255, 0, 0);
 	border-radius: 5px;
+	border: 2px dashed black;
 }</string>
         </property>
         <property name="text">
@@ -281,7 +282,6 @@
          <string notr="true">#white_btn{
 	background-color: rgb(255, 255, 255);
 	border-radius: 5px;
-	border: 1px solid black;
 }</string>
         </property>
         <property name="text">

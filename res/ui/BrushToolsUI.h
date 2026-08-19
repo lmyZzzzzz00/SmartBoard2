@@ -25,12 +25,12 @@ public:
     QWidget *verticalWidget;
     QVBoxLayout *verticalLayout;
     QGridLayout *BrushesAndThicknessForm;
-    QLabel *brush_btn;
-    QLabel *ThinBrushBtn;
-    QLabel *ThickBrushBtn;
-    QLabel *MiddleBrushBtn;
     QLabel *pencil_btn;
+    QLabel *ThickBrushBtn;
+    QLabel *brush_btn;
     QLabel *pen_btn;
+    QLabel *ThinBrushBtn;
+    QLabel *MiddleBrushBtn;
     QGridLayout *ColorsForm;
     QLabel *orange_btn;
     QLabel *blue_btn;
@@ -66,19 +66,12 @@ public:
         BrushesAndThicknessForm = new QGridLayout();
         BrushesAndThicknessForm->setObjectName("BrushesAndThicknessForm");
         BrushesAndThicknessForm->setContentsMargins(0, -1, 71, -1);
-        brush_btn = new QLabel(verticalWidget);
-        brush_btn->setObjectName("brush_btn");
-        brush_btn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-        brush_btn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/BrushIcon.png")));
+        pencil_btn = new QLabel(verticalWidget);
+        pencil_btn->setObjectName("pencil_btn");
+        pencil_btn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+        pencil_btn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/PencilIcon.png")));
 
-        BrushesAndThicknessForm->addWidget(brush_btn, 5, 2, 1, 1);
-
-        ThinBrushBtn = new QLabel(verticalWidget);
-        ThinBrushBtn->setObjectName("ThinBrushBtn");
-        ThinBrushBtn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-        ThinBrushBtn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/ThinBrushBtn.png")));
-
-        BrushesAndThicknessForm->addWidget(ThinBrushBtn, 6, 0, 1, 1);
+        BrushesAndThicknessForm->addWidget(pencil_btn, 5, 0, 1, 1);
 
         ThickBrushBtn = new QLabel(verticalWidget);
         ThickBrushBtn->setObjectName("ThickBrushBtn");
@@ -87,19 +80,12 @@ public:
 
         BrushesAndThicknessForm->addWidget(ThickBrushBtn, 6, 2, 1, 1);
 
-        MiddleBrushBtn = new QLabel(verticalWidget);
-        MiddleBrushBtn->setObjectName("MiddleBrushBtn");
-        MiddleBrushBtn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-        MiddleBrushBtn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/MiddleBrushBtn.png")));
+        brush_btn = new QLabel(verticalWidget);
+        brush_btn->setObjectName("brush_btn");
+        brush_btn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+        brush_btn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/BrushIcon.png")));
 
-        BrushesAndThicknessForm->addWidget(MiddleBrushBtn, 6, 1, 1, 1);
-
-        pencil_btn = new QLabel(verticalWidget);
-        pencil_btn->setObjectName("pencil_btn");
-        pencil_btn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
-        pencil_btn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/PencilIcon.png")));
-
-        BrushesAndThicknessForm->addWidget(pencil_btn, 5, 0, 1, 1);
+        BrushesAndThicknessForm->addWidget(brush_btn, 5, 2, 1, 1);
 
         pen_btn = new QLabel(verticalWidget);
         pen_btn->setObjectName("pen_btn");
@@ -107,6 +93,20 @@ public:
         pen_btn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/PenIcon.png")));
 
         BrushesAndThicknessForm->addWidget(pen_btn, 5, 1, 1, 1);
+
+        ThinBrushBtn = new QLabel(verticalWidget);
+        ThinBrushBtn->setObjectName("ThinBrushBtn");
+        ThinBrushBtn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+        ThinBrushBtn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/ThinBrushBtn.png")));
+
+        BrushesAndThicknessForm->addWidget(ThinBrushBtn, 6, 0, 1, 1);
+
+        MiddleBrushBtn = new QLabel(verticalWidget);
+        MiddleBrushBtn->setObjectName("MiddleBrushBtn");
+        MiddleBrushBtn->setCursor(QCursor(Qt::CursorShape::PointingHandCursor));
+        MiddleBrushBtn->setPixmap(QPixmap(QString::fromUtf8("../btn_image/MiddleBrushBtn.png")));
+
+        BrushesAndThicknessForm->addWidget(MiddleBrushBtn, 6, 1, 1, 1);
 
 
         verticalLayout->addLayout(BrushesAndThicknessForm);
@@ -169,6 +169,7 @@ public:
         red_btn->setStyleSheet(QString::fromUtf8("#red_btn{\n"
 "	background-color: rgb(255, 0, 0);\n"
 "	border-radius: 5px;\n"
+"	border: 2px dashed black;\n"
 "}"));
 
         ColorsForm->addWidget(red_btn, 0, 0, 1, 1);
@@ -199,7 +200,6 @@ public:
         white_btn->setStyleSheet(QString::fromUtf8("#white_btn{\n"
 "	background-color: rgb(255, 255, 255);\n"
 "	border-radius: 5px;\n"
-"	border: 1px solid black;\n"
 "}"));
 
         ColorsForm->addWidget(white_btn, 1, 5, 1, 1);
@@ -247,12 +247,12 @@ public:
     {
         BrushToolsUI->setWindowTitle(QCoreApplication::translate("BrushToolsUI", "Form", nullptr));
         bg_label->setText(QString());
-        brush_btn->setText(QString());
-        ThinBrushBtn->setText(QString());
-        ThickBrushBtn->setText(QString());
-        MiddleBrushBtn->setText(QString());
         pencil_btn->setText(QString());
+        ThickBrushBtn->setText(QString());
+        brush_btn->setText(QString());
         pen_btn->setText(QString());
+        ThinBrushBtn->setText(QString());
+        MiddleBrushBtn->setText(QString());
         orange_btn->setText(QString());
         blue_btn->setText(QString());
         light_blue_btn->setText(QString());
