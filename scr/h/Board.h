@@ -116,4 +116,5 @@ public slots:
     void OnChangeBtnModeEvent(BtnType type);
     void OnChangeScaleEvent(bool is_bigger);
     void OnRotateEvent(); // 处理旋转按钮的槽函数
+    void OnChangePenColorEvent(const QColor& color);
 };

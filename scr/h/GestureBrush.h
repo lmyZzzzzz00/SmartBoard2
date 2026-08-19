@@ -49,6 +49,8 @@ public:
     [[nodiscard]] const QVector<Stroke>& strokes() const { return m_strokes; }
     [[nodiscard]] const QString& penWidthMode()    const { return m_penWidthMode; }
 
+    void setPenColor(const QColor& color) { m_penColor = color; }
+
 protected:
     void paintEvent(QPaintEvent* event) override;
     void mousePressEvent(QMouseEvent* event) override;

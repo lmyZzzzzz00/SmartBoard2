@@ -1,6 +1,8 @@
 #include "BrushTools.h"
 #include "BrushToolsUI.h"
 #include <iostream>
+#include <QLabel>
+#include <QMouseEvent>
 #include "../../scr/h/ToolButtons.h"
 
 BrushTools::BrushTools(ToolButtons *parent)
@@ -26,6 +28,21 @@ BrushTools::BrushTools(ToolButtons *parent)
     ui->MiddleBrushBtn->setPixmap(QPixmap("../res/btn_image/MiddleBrushBtn.png"));
     ui->ThickBrushBtn->setPixmap(QPixmap("../res/btn_image/ThickBrushBtn.png"));
     std::cout << "BrushTools created" << std::endl;
+
+    // 绑定信号与槽
+    // 修改 connect 语句
+    ui->red_btn->installEventFilter(this);
+    ui->orange_btn->installEventFilter(this);
+    ui->yellow_btn->installEventFilter(this);
+    ui->green_btn->installEventFilter(this);
+    ui->light_blue_btn->installEventFilter(this);
+    ui->blue_btn->installEventFilter(this);
+    ui->purple_btn->installEventFilter(this);
+    ui->dark_green_btn->installEventFilter(this);
+    ui->pink_btn->installEventFilter(this);
+    ui->black_btn->installEventFilter(this);
+    ui->white_btn->installEventFilter(this);
+    ui->grey_btn->installEventFilter(this);
 
     setWindowOpacity(0);
     show();
@@ -98,4 +115,97 @@ void BrushTools::anim() {
     }
 
     setWindowOpacity(new_alpha);
+}
+
+void BrushTools::change_pen_color(QColor color) {
+    std::cout << "new_pen_color: " << color.name().toStdString() << std::endl;
+    emit changePenColorSignal(color);
+}
+
+bool BrushTools::eventFilter(QObject *obj, QEvent *event) {
+    if (obj == ui->red_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(Qt::red);
+            return true;
+        }
+    }
+    else if (obj == ui->orange_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(255, 170, 0));
+            return true;
+        }
+    }
+    else if (obj == ui->yellow_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(Qt::yellow);
+            return true;
+        }
+    }
+    else if (obj == ui->green_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(0, 170, 0));
+            return true;
+        }
+    }
+    else if (obj == ui->light_blue_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(0, 255, 255));
+            return true;
+        }
+    }
+    else if (obj == ui->blue_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(Qt::blue);
+            return true;
+        }
+    }
+    else if (obj == ui->purple_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(170, 85, 255));
+            return true;
+        }
+    }
+    else if (obj == ui->dark_green_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(0, 104, 0));
+            return true;
+        }
+    }
+    else if (obj == ui->pink_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(255, 0, 127));
+            return true;
+        }
+    }
+    else if (obj == ui->grey_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(QColor(127, 127, 127));
+            return true;
+        }
+    }
+    else if (obj == ui->black_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(Qt::black);
+            return true;
+        }
+    }
+    else if (obj == ui->white_btn && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        if (mouseEvent->button() == Qt::LeftButton) {
+            change_pen_color(Qt::white);
+            return true;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }

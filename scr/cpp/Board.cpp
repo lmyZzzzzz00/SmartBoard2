@@ -419,3 +419,8 @@ void Board::rotate_animate() {
 void Board::HideScaleInfoLabel() const {
     m_scale_info_label->hide();
 }
+
+void Board::OnChangePenColorEvent(const QColor& color) {
+    std::cout << "切换画笔颜色为：" << color.name().toStdString() << std::endl;
+    m_gestureBrush->setPenColor(color);
+}

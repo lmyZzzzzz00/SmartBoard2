@@ -2,6 +2,7 @@
 
 #include <QWidget>
 #include <QTimer>
+#include <QColor>
 
 namespace Ui {
     class BrushToolsUI;   // 向前声明
@@ -25,6 +26,13 @@ private:
     double m_alpha_speed = 0.2;   // 透明度变化速度
     int    m_alpha_direction = 1;   // 透明度变化方向，1表示增加，-1表示减少
     void anim();   // 动画效果
+
+    void change_pen_color(QColor color);   // 改变画笔颜色
+
+    bool eventFilter(QObject *obj, QEvent *event) override;   // 事件过滤器，用于处理鼠标事件
+
+signals:
+    void changePenColorSignal(QColor color);   // 信号，用于通知主窗口改变画笔颜色
 
 public slots:
     void OnBtnClickedEvent(); 

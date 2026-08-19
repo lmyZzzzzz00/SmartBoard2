@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
     QObject::connect(&board, &Board::changeToCursorModeSignal, toolButtons.m_rotate_btn, &SingleToolBtn::OnChangeToCursorModeEvent);
     QObject::connect(&board, &Board::BrushToolsHideSignal, toolButtons.m_brush_tools, &BrushTools::OnBtnHidedEvent);
     QObject::connect(board.m_gestureBrush, &GestureBrush::BrushToolsHideSignal, toolButtons.m_brush_tools, &BrushTools::OnBtnHidedEvent);
+    QObject::connect(toolButtons.m_brush_tools, &BrushTools::changePenColorSignal, &board, &Board::OnChangePenColorEvent);
 
     board.update();
 
